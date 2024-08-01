@@ -1,31 +1,32 @@
 const express = require('express');
 const router = express.Router();
-const { Contact } = require('../models');
+const { Suggestion } = require('../models');
 const { Op } = require("sequelize");
 const yup = require("yup");
 
+// Validation schema for suggestion data
 router.post("/", async (req, res) => {
-    let data = req.body;
-    // Validate request body
-    let validationSchema = yup. object({
+    let data = req.body
+    let validationSchema = yup.object({
         name: yup.string().trim().min(3).max(100).required(),
         salutation: yup.string().trim().min(2).max(3).required(),
         email: yup.string().trim().min(1).max(100).required(),
         phone_no: yup.string().min(8).max(15).required(),
-        reason: yup.string().trim().min(1).max(100).required(),
-        detail: yup.string().trim().min(1).max(500).required()
+        type_of_activity: yup.string().trim().min(1).max(100).required(),
+        duration: yup.string().trim().min(1).max(50),
+        detail: yup.string().trim().min(1).max(500).required(),
     });
     try {
         data = await validationSchema.validate(data,
             { abortEarly: false });
-        let result = await Contact.create(data);
+        let result = await Suggestion.create(data);
         res.json(result);
     }
     catch (err) {
         res.status(400).json({ errors: err.errors });
     }
 });
-
+// GET route to fetch all suggestions or filter by search query
 router.get("/", async (req, res) => {
     let condition = {};
     let search = req.query.search;
@@ -35,95 +36,95 @@ router.get("/", async (req, res) => {
             { salutation: { [Op.like]: `%${search}%` } },
             { email: { [Op.like]: `%${search}%` } },
             { phone_no: { [Op.like]: `%${search}%` } },
-            { reason: { [Op.like]: `%${search}%` } },
-            { detail: { [Op.like]: `%${search}%` } }
+            { type_of_activity: { [Op.like]: `%${search}%` } },
+            { duration: { [Op.like]: `%${search}%` } },
+            { detail: { [Op.like]: `%${search}%` } },
         ];
     }
-    // You can add condition for other columns here
-    // e.g. condition.columnName = value;
-    
-    let list = await Contact.findAll({
+
+    let list = await Suggestion.findAll({
         where: condition,
         order: [['createdAt', 'DESC']]
     });
     res.json(list);
 });
 
+// GET route to fetch a suggestion by ID
 router.get("/:id", async (req, res) => {
     let id = req.params.id;
-    let contact = await Contact.findByPk(id);
-    // Check id not found
-    if (!contact) {
-        res.sendStatus(404);
+    let suggestion = await Suggestion.findByPk(id);
+    if (!suggestion) {
+        res.sendStatus(404); // Not Found
         return;
     }
-    res.json(contact);
+    res.json(suggestion);
 });
 
+// PUT route to update a suggestion by ID
 router.put("/:id", async (req, res) => {
     let id = req.params.id;
-    // Check id not found
-    let contact = await Contact.findByPk(id);
-    if (!contact) {
-        res.sendStatus(404);
+    let suggestion = await Suggestion.findByPk(id);
+    if (!suggestion) {
+        res.sendStatus(404); // Not Found
         return;
     }
-    
+
     let data = req.body;
-    // Validate request body
     let validationSchema = yup.object({
         name: yup.string().trim().min(3).max(100).required(),
         salutation: yup.string().trim().min(2).max(3).required(),
         email: yup.string().trim().min(1).max(100).required(),
-        phone_no: yup.string().trim().min(8).max(15).required(),
-        reason: yup.string().trim().min(10).max(100).required(),
-        detail: yup.string().trim().min(10).max(500).required()
+        phone_no: yup.string().min(8).max(15).required(),
+        type_of_activity: yup.string().trim().min(1).max(100).required(),
+        duration: yup.string().trim().min(1).max(50),
+        detail: yup.string().trim().min(1).max(500).required(),
     });
     try {
         data = await validationSchema.validate(data,
             { abortEarly: false });
 
-        let num = await Contact.update(data, {
+        let num = await Suggestion.update(data, {
             where: { id: id }
         });
         if (num == 1) {
             res.json({
-                message: "Request was updated successfully."
+                message: "Suggestion updated successfully."
             });
         }
         else {
             res.status(400).json({
-                message: `Cannot update request with id ${id}.`
+                message: `Cannot update suggestion with id ${id}.`
             });
         }
     }
     catch (err) {
         res.status(400).json({ errors: err.errors });
+        console.log(err.errors)
     }
 });
 
+// DELETE route to delete a suggestion by ID
 router.delete("/:id", async (req, res) => {
     let id = req.params.id;
-    // Check id not found
-    let contact = await Contact.findByPk(id);
-    if (!contact) {
-        res.sendStatus(404);
+    let suggestion = await Suggestion.findByPk(id);
+    if (!suggestion) {
+        res.sendStatus(404); // Not Found
         return;
     }
 
-    let num = await Contact.destroy({
+    let num = await Suggestion.destroy({
         where: { id: id }
-    })
+    });
     if (num == 1) {
         res.json({
-            message: "Request was deleted successfully."
+            message: "Suggestion deleted successfully."
         });
-    }
-    else {
+    } else {
         res.status(400).json({
-            message: `Cannot delete request with id ${id}.`
+            message: `Cannot delete suggestion with id ${id}.`
         });
     }
+
 });
 
 module.exports = router;

@@ -1,24 +1,27 @@
 const express = require('express');
 const router = express.Router();
-const { Contact } = require('../models');
+const { Survey } = require('../models');
 const { Op } = require("sequelize");
 const yup = require("yup");
 
 router.post("/", async (req, res) => {
     let data = req.body;
+    console.log(data);
+    
     // Validate request body
-    let validationSchema = yup. object({
-        name: yup.string().trim().min(3).max(100).required(),
-        salutation: yup.string().trim().min(2).max(3).required(),
-        email: yup.string().trim().min(1).max(100).required(),
-        phone_no: yup.string().min(8).max(15).required(),
-        reason: yup.string().trim().min(1).max(100).required(),
-        detail: yup.string().trim().min(1).max(500).required()
+    let validationSchema = yup.object({
+        name_prog: yup.string().trim().min(1).max(50),
+        schedule_timing: yup.string().trim().min(1).max(5).required(),
+        participation: yup.string().trim().min(1).max(5).required(),
+        effectiveness: yup.string().trim().min(1).max(5).required(),
+        good_effective: yup.string().trim().min(8).max(500).required(),
+        need_improvement: yup.string().trim().min(1).max(500).required(),
     });
     try {
         data = await validationSchema.validate(data,
             { abortEarly: false });
-        let result = await Contact.create(data);
+        let result = await Survey.create(data);
+        console.log("there");
         res.json(result);
     }
     catch (err) {
@@ -31,18 +34,17 @@ router.get("/", async (req, res) => {
     let search = req.query.search;
     if (search) {
         condition[Op.or] = [
-            { name: { [Op.like]: `%${search}%` } },
-            { salutation: { [Op.like]: `%${search}%` } },
-            { email: { [Op.like]: `%${search}%` } },
-            { phone_no: { [Op.like]: `%${search}%` } },
-            { reason: { [Op.like]: `%${search}%` } },
-            { detail: { [Op.like]: `%${search}%` } }
+            { name_prog: { [Op.like]: `%${search}%` } },
+            { participation: { [Op.like]: `%${search}%` } },
+            { effectiveness: { [Op.like]: `%${search}%` } },
+            { good_effective: { [Op.like]: `%${search}%` } },
+            { need_improvement: { [Op.like]: `%${search}%` } },
         ];
     }
     // You can add condition for other columns here
     // e.g. condition.columnName = value;
     
-    let list = await Contact.findAll({
+    let list = await Survey.findAll({
         where: condition,
         order: [['createdAt', 'DESC']]
     });
@@ -51,20 +53,20 @@ router.get("/", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
     let id = req.params.id;
-    let contact = await Contact.findByPk(id);
+    let survey = await Survey.findByPk(id);
     // Check id not found
-    if (!contact) {
+    if (!survey) {
         res.sendStatus(404);
         return;
     }
-    res.json(contact);
+    res.json(survey);
 });
 
 router.put("/:id", async (req, res) => {
     let id = req.params.id;
     // Check id not found
-    let contact = await Contact.findByPk(id);
-    if (!contact) {
+    let survey = await Survey.findByPk(id);
+    if (!survey) {
         res.sendStatus(404);
         return;
     }
@@ -72,18 +74,18 @@ router.put("/:id", async (req, res) => {
     let data = req.body;
     // Validate request body
     let validationSchema = yup.object({
-        name: yup.string().trim().min(3).max(100).required(),
-        salutation: yup.string().trim().min(2).max(3).required(),
-        email: yup.string().trim().min(1).max(100).required(),
-        phone_no: yup.string().trim().min(8).max(15).required(),
-        reason: yup.string().trim().min(10).max(100).required(),
-        detail: yup.string().trim().min(10).max(500).required()
+        name_prog: yup.string().trim().min(1).max(50),
+        schedule_timing: yup.string().trim().min(1).max(5).required(),
+        participation: yup.string().trim().min(1).max(5).required(),
+        effectiveness: yup.string().trim().min(1).max(5).required(),
+        good_effective: yup.string().trim().min(8).max(500).required(),
+        need_improvement: yup.string().trim().min(1).max(500).required(),
     });
     try {
         data = await validationSchema.validate(data,
             { abortEarly: false });
 
-        let num = await Contact.update(data, {
+        let num = await Survey.update(data, {
             where: { id: id }
         });
         if (num == 1) {
@@ -105,13 +107,13 @@ router.put("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
     let id = req.params.id;
     // Check id not found
-    let contact = await Contact.findByPk(id);
-    if (!contact) {
+    let survey = await Survey.findByPk(id);
+    if (!survey) {
         res.sendStatus(404);
         return;
     }
 
-    let num = await Contact.destroy({
+    let num = await Survey.destroy({
         where: { id: id }
     })
     if (num == 1) {
